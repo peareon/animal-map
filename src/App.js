@@ -1,24 +1,57 @@
-import logo from './logo.svg';
-import './App.css';
-
+import DisplayInfo from "./components/DisplayInfo";
+import Header from "./components/Header";
+import Information from "./components/Information";
+import SearchBar from "./components/Searchbar";
+import { MainContainer, OverviewContainer, TitleSearchContainer } from "./styles/styles";
+import GlobalStyle from "./styles/globalStyles";
+import { Route, Routes } from "react-router-dom";
+import CompleteDescription from "./components/CompleteDescription";
+import AppInfo from "./AppInfo";
+import AppDetails from "./AppDetails";
 function App() {
+
+  
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+    <GlobalStyle/>
+    <Routes>
+      <Route path = '/' element = { 
+        <MainContainer>
+          <OverviewContainer>
+            <TitleSearchContainer>
+              <Header/>
+              <SearchBar/>
+            </TitleSearchContainer>
+            <Information/>
+            <AppInfo/>
+          </OverviewContainer>
+          <DisplayInfo/>
+        </MainContainer>
+      } />
+      <Route path= '/speciesInfo' element={
+        <MainContainer>
+          <OverviewContainer>
+              <TitleSearchContainer>
+                <Header/>
+              </TitleSearchContainer>
+              <Information/>
+          </OverviewContainer>
+          <CompleteDescription />
+        </MainContainer> 
+      }/>
+      <Route path= '/appInfo' element={
+        <MainContainer>
+          <OverviewContainer>
+              <TitleSearchContainer>
+                <Header/>
+              </TitleSearchContainer>
+              <Information/>
+          </OverviewContainer>
+          <AppDetails/>
+        </MainContainer> 
+      }/>
+    </Routes>
+    </>
   );
 }
 
