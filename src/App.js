@@ -6,8 +6,8 @@ import { MainContainer, OverviewContainer, TitleSearchContainer } from "./styles
 import GlobalStyle from "./styles/globalStyles";
 import { Route, Routes } from "react-router-dom";
 import CompleteDescription from "./components/CompleteDescription";
-import AppInfo from "./AppInfo";
-import AppDetails from "./AppDetails";
+import AppInfo from "./components/AppInfo";
+import AppDetails from "./components/AppDetails";
 function App() {
 
   

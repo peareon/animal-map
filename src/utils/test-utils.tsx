@@ -2,7 +2,7 @@ import React, { PropsWithChildren } from 'react';
 import { render } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
-import store from '../redux/store/store'
+import store from '../redux/store'
 
 // This function wraps the component in all necessary Providers
 function renderWithProviders(ui: React.ReactElement) {

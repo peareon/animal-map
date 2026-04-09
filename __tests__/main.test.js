@@ -4,13 +4,10 @@ import { fireEvent, screen } from '@testing-library/react';
 import App from '../src/App';
 import store from '../src/redux/store';
 import { renderWithProviders } from '../src/utils/test-utils';
-import { resetStatus } from '../src/redux/slices/gbif.slice';
+import { getScienfiticName } from '../src/redux/slices/gemini.slice';
+import { getDescriptions, resetStatus } from '../src/redux/slices/gbif.slice';
+import { click } from '@testing-library/user-event/dist/click';
 
-test('renders learn react link', () => {
-  render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
-});
 
 jest.mock('axios');
 const mockedAxios = axios;
@@ -31,13 +28,83 @@ jest.mock('leaflet', () => ({
   },
 }));
 
-const mockAlbum = {
-  idAlbum: '2116624',
-  strAlbum: 'Love Gun',
-  strArtist: 'KISS',
-  intYearReleased: '1977',
-  strAlbum3DThumb: 'https://example.com/love-gun.png',
+const mockSpeciesResponse = {
+      "content": {
+        "parts": [
+          {
+            "text": "Género: *Panthera*\nEspecie: *Panthera onca*",
+            "thoughtSignature": "EjQKMgG+Pvb7uHGC7ECtfb23NDw4uZvpvixtFNWzHPo5o/XhxG7AZ5ivSjKl9zVOm9hxSJa6"
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": "STOP",
+      "index": 0
 };
+
+const mockSpecieDetailResponse = {
+    "key": 2440483,
+    "nameKey": 7877340,
+    "datasetKey": "d7dddbf4-2cf0-4f39-9b2a-bb099caae36c",
+    "constituentKey": "7ddf754f-d193-4cc9-b351-99906754a03b",
+    "nubKey": 2440483,
+    "parentKey": 2440482,
+    "parent": "Orcinus",
+    "basionymKey": 2440489,
+    "basionym": "Delphinus orca Linnaeus, 1758",
+    "kingdom": "Animalia",
+    "phylum": "Chordata",
+    "order": "Cetacea",
+    "family": "Delphinidae",
+    "genus": "Orcinus",
+    "species": "Orcinus orca",
+    "kingdomKey": 1,
+    "phylumKey": 44,
+    "classKey": 359,
+    "orderKey": 733,
+    "familyKey": 5314,
+    "genusKey": 2440482,
+    "speciesKey": 2440483,
+    "scientificName": "Orcinus orca (Linnaeus, 1758)",
+    "canonicalName": "Orcinus orca",
+    "authorship": "(Linnaeus, 1758) ",
+    "publishedIn": "Syst. Nat., 10th ed. vol.1 p.77",
+    "nameType": "SCIENTIFIC",
+    "taxonomicStatus": "ACCEPTED",
+    "rank": "SPECIES",
+    "origin": "SOURCE",
+    "numDescendants": 3,
+    "numOccurrences": 0,
+    "taxonID": "gbif:2440483",
+    "extinct": false,
+    "habitats": [
+      "MARINE"
+    ],
+    "nomenclaturalStatus": [],
+    "threatStatuses": [
+      "DATA_DEFICIENT",
+      "DATA_DEFICIENT",
+      "NOT_APPLICABLE",
+      "DATA_DEFICIENT",
+      "DATA_DEFICIENT",
+      "DATA_DEFICIENT",
+      "NOT_EVALUATED"
+    ],
+    "descriptions": [
+      {
+        "description": "Range: Incidental catches of O. orca occurred in the East Sea and around Jeju Island (Cetacean Research Institute 2007; Fig. 93)."
+      },
+      {
+        "description": "Remarks: The killer whale, an abundant, highly social species with reduced genetic variation, has no consistent geographical pattern of global diversity and no mtDNA variation within regional populations (Hoelzel et al. 2002). Because of range-wide low genetic diversity, the killer whale remains a monotypic species, even though two subspecies (resident killer whale and transient killer whale or Bigg’s killer whale) or three ecotypes have been proposed (Reeves & Read 2003; Morin et al. 2010). Compared to Antarctic and eastern North Pacific populations, which have three well-described ecotypes (Stevens et al. 1989; Pitman & Ensor 2003), populations of O. orca in the western North Pacific have been poorly studied. Both specialized piscivorous resident and mammal eating transient ecotypes inhabit the western North Pacific Ocean (Burdin et al. 2007; Pilot et al. 2010; Morin et al. 2010); the ecotype inhabiting seas around Korea remains uncertain."
+      },
+      {
+        "description": "Orca pacifica Gray, 1870 p. 76; Type locality- North Pacific."
+      },
+      {
+        "description": "“ Oceano Europo. ”"
+      }]
+};
+
 
 beforeEach(() => {
   // Se limpia el estado de búsqueda antes de cada test para evitar
@@ -70,7 +137,7 @@ describe('App component', () => {
     // CAMBIO:
     // Se valida el comportamiento real del App en estado inicial,
     // en lugar de asumir que SearchResults siempre muestra resultados.
-    expect(screen.getByText(/Conocer m[aás] sobre la app/i)).toBeInTheDocument();
+    expect(screen.getByText(/Conocer m[aá]s sobre la app/i)).toBeInTheDocument();
   });
 
   it('should not render the Library component initially if the app does not show it on IDLE state', () => {
@@ -83,20 +150,9 @@ describe('App component', () => {
   });
 });
 
-describe('Header component', () => {
-  it('should render the header content correctly', () => {
-    // CAMBIO:
-    // Se usa renderWithProviders para envolver el componente con Provider/Router
-    // si el proyecto lo requiere.
-    renderWithProviders(<Header />);
-
-    expect(screen.getByText('Lexur')).toBeInTheDocument();
-  });
-});
-
-describe('Search bar', () => {
+describe('Get scientific name conversion from gemini API', () => {
   it('should update the input value correctly', () => {
-    renderWithProviders(<Header />);
+    renderWithProviders(<App />);
 
     // CAMBIO:
     // Se reemplaza una búsqueda incorrecta tipo getByName por getByRole('textbox'),
@@ -104,106 +160,92 @@ describe('Search bar', () => {
     const searchBar = screen.getByRole('textbox');
 
     fireEvent.change(searchBar, {
-      target: { name: 'album', value: 'KISS' },
+      target: { name: 'animal', value: 'jaguar' },
     });
 
-    expect(searchBar).toHaveValue('KISS');
+    expect(searchBar).toHaveValue('jaguar');
   });
 
-  it('should fetch albums successfully with the thunk', async () => {
-    // CAMBIO:
-    // Se simula la respuesta de axios con la estructura esperada por el thunk.
-    mockedAxios.get.mockResolvedValue({
+  it('should fetch the scientific name of an specie', async () => {
+
+    mockedAxios.post.mockResolvedValue({
       data: {
-        album: [mockAlbum],
+        candidates: [mockSpeciesResponse],
       },
     });
 
-    // CAMBIO:
-    // Se prueba directamente el thunk usando dispatch al store.
-    // Esto valida tanto la llamada como la actualización del estado.
-    const resultAction = await store.dispatch(fetchAlbums('KISS'));
+    const resultAction = await store.dispatch(getScienfiticName('jaguar'));
 
-    expect(resultAction.type).toBe('albums/fetchAlbums/fulfilled');
-    expect(store.getState().searchedSongs.albums).toHaveLength(1);
-    expect(store.getState().searchedSongs.albums[0].strAlbum).toBe('Love Gun');
+    expect(resultAction.type).toBe('gemini/fetchScientificName/fulfilled');
+    const fullState = store.getState().gemini;
+    console.log(fullState)
+    expect(fullState.scientificName.species).toMatch(/Panthera onca/i);
+    
   });
 });
 
-describe('SearchResults component', () => {
-  it('should render the search results title', () => {
-    // CAMBIO:
-    // Se inyecta un estado mínimo válido antes de renderizar el componente.
-    store.dispatch(resetSearch([mockAlbum]));
-    renderWithProviders(<SearchResults />);
+describe('Map and details about the specie', () => {
+  it('Fetch the Taxon ID from the specie', async() => {
 
-    expect(screen.getByText('Search results')).toBeInTheDocument();
-  });
-
-  it('should render the album information correctly', () => {
-    store.dispatch(resetSearch([mockAlbum]));
-    renderWithProviders(<SearchResults />);
-
-    // CAMBIO:
-    // Se valida el contenido visible real del componente.
-    // Se usan regex tolerantes para evitar fallos por acentos o formato menor.
-    expect(screen.getByText(/T[ií]tulo:/i)).toBeInTheDocument();
-    expect(screen.getByText(/Artista:/i)).toBeInTheDocument();
-    expect(screen.getByText(/Release Date:/i)).toBeInTheDocument();
-  });
-
-  it('should add an album to the library when clicking the button', () => {
-    store.dispatch(resetSearch([mockAlbum]));
-    renderWithProviders(<SearchResults />);
-
-    // CAMBIO:
-    // Se usa el texto real del botón visible para interactuar con el componente
-    // como lo haría el usuario.
-    const addButton = screen.getByRole('button', {
-      name: /Agregar a mi biblioteca/i,
+    mockedAxios.get.mockResolvedValue({
+      data: {
+        results: [mockSpecieDetailResponse],
+      },
     });
 
-    fireEvent.click(addButton);
+    const resultAction = await store.dispatch(getDescriptions('Panthera onca'));
 
-    expect(store.getState().library.albums).toHaveLength(1);
-    expect(store.getState().library.albums[0].strAlbum).toBe('Love Gun');
+    expect(resultAction.type).toBe('gbif/getDescription/fulfilled');
+    const fullState = store.getState().gbif;
+    console.log("GBIF state: ", fullState)
+    expect(fullState.animalInfo.taxonID).toBe(2440483);
+
+  });
+
+  it('should render the map and specie´s detail', async() => {
+    
+
+   mockedAxios.get.mockResolvedValue({
+      data: {
+        results: [mockSpecieDetailResponse],
+      },
+    });
+
+    const resultAction = await store.dispatch(getDescriptions('Panthera onca'));
+    renderWithProviders(<App />);
+    const elemento = await screen.findByText(/Datos sobre la especie/i);
+    expect(elemento).toBeInTheDocument();
   });
 });
 
-describe('Library component', () => {
-  it('should render albums inside the library', () => {
-    // CAMBIO:
-    // En lugar de pasar children que el componente quizá no use,
-    // se carga el estado real del store.
-    store.dispatch(addAlbum(mockAlbum));
-    renderWithProviders(<Library />);
 
-    expect(screen.getByText('Biblioteca')).toBeInTheDocument();
-    expect(screen.getByText(/Love Gun/i)).toBeInTheDocument();
+
+describe('App info page', () => {
+  it('should render the app information and navigate to the page properly', async() => {
+    renderWithProviders(<App />);
+    const elemento = screen.getByText(/Conocer m[aá]s sobre la app/i);
+    fireEvent.click(elemento);
+    const elementoUpdated = await screen.findByText(/Esta aplicación utiliza la API/);
+    expect(elementoUpdated).toBeInTheDocument();
+
   });
+});
 
-  it('should remove an album from the library', () => {
-    store.dispatch(addAlbum(mockAlbum));
-    renderWithProviders(<Library />);
 
-    // CAMBIO:
-    // Se busca el botón real de eliminar en el contexto correcto.
-    const removeButton = screen.getByRole('button', { name: /Eliminar/i });
+describe('Species full detail render', () => {
+  it('should render the app information and navigate to the page properly', async() => {
+    mockedAxios.get.mockResolvedValue({
+      data: {
+        results: [mockSpecieDetailResponse],
+      },
+    });
 
-    fireEvent.click(removeButton);
+    const resultAction = await store.dispatch(getDescriptions('Panthera onca'));
+    renderWithProviders(<App />);
+    const elemento = await screen.findByText(/Click para m[aá]s informaci[oó]n/i);
+    expect(elemento).toBeInTheDocument();
+    const elementoNavigated = await screen.findByText(/Información de Panthera onca/i);
+    expect(elementoNavigated).toBeInTheDocument();
 
-    expect(store.getState().library.albums).toHaveLength(0);
-  });
-
-  it('should render correctly when the library is empty', () => {
-    renderWithProviders(<Library />);
-
-    expect(screen.getByText('Biblioteca')).toBeInTheDocument();
-
-    // CAMBIO:
-    // Cuando la biblioteca está vacía, no debería existir el botón de eliminar.
-    expect(
-      screen.queryByRole('button', { name: /Eliminar/i })
-    ).not.toBeInTheDocument();
   });
 });

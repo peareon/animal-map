@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, current } from "@reduxjs/toolkit";
 import { FAILED, IDLE, LOADING, SUCCEEDED } from "./status";
-const axios = require('axios/dist/node/axios.cjs');
+import axios from "axios";
 
 
 const descriptionUrl = 'https://api.gbif.org/v1/species/search?datasetKey=d7dddbf4-2cf0-4f39-9b2a-bb099caae36c&rank=SPECIES&q='
@@ -8,6 +8,7 @@ const descriptionUrl = 'https://api.gbif.org/v1/species/search?datasetKey=d7dddb
 export const getDescriptions = createAsyncThunk('gbif/getDescription', async(animalSpecies)=>{
     try{
         const response = await axios.get(descriptionUrl+animalSpecies);
+        console.log("GBIF data", response.data);
         const descriptions = response.data.results[0].descriptions;
         const taxonId = response.data.results[0].key;
         const speciesThreatStatus = response.data.results[0].threatStatuses[0];

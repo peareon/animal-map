@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-const axios = require('axios/dist/node/axios.cjs');
+import axios from "axios";
 import { IDLE, SUCCEEDED, FAILED, LOADING } from "./status";
 
 const API_KEY = process.env.REACT_APP_GEMINI_KEY;
@@ -16,14 +16,13 @@ export const getScienfiticName = createAsyncThunk('gemini/fetchScientificName', 
   };
 
   try {
-    // 4. Petición con Axios
-    const response = await axios.post(url, payload, {
+    const response = await axios.post(url2, payload, {
       headers: {
         'Content-Type': 'application/json',
       }
     });
-
-    // 5. Extraer la respuesta (Axios ya hace el JSON.parse automáticamente)
+    console.log('AAAAAAAAAAAAAAAAAAAAAAA')
+    console.log('CONTENIDO DEL MOCK EN EL TEST:', response.data);
     const content = response.data.candidates[0].content.parts[0].text;
     const regex = /\*([^*]*)\*/g;
     const rawSpecies = content.match(regex);
@@ -33,7 +32,6 @@ export const getScienfiticName = createAsyncThunk('gemini/fetchScientificName', 
       'genus' : cleanSpecies[0],
       'species': cleanSpecies[1],
     }
-    console.log(data)
     return data;
 
   } catch (error) {
